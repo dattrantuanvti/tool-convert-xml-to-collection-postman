@@ -13,17 +13,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 const port = 8000;
 
-const readFiles = async (files, folderName) => {
-  const items = [];
-  await files.forEach(async (file) => {
-    const data = await fs.readFileSync(`${folderName}\\${file}`, {
-      encoding: "binary",
-    });
-    items.push(data);
-  });
-  return items;
-};
-
 app.post("/single", upload.single("file"), async (req, res) => {
   const fileBuffer = req.file.buffer;
   // Đọc nội dung của tệp tin từ fileBuffer

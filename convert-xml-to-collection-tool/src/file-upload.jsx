@@ -1,7 +1,7 @@
 import { UploadOutlined } from "@ant-design/icons";
 import { Button, message, Space, Upload } from "antd";
 
-const FileUpload = ({ onUpload }) => {
+const FileUpload = ({ onUpload, setLoading }) => {
   const props = {
     name: "file",
     action:
@@ -13,8 +13,10 @@ const FileUpload = ({ onUpload }) => {
       if (info.file.status === "done") {
         onUpload(info);
         message.success(`${info.file.name} file đã được tải lên thành công!`);
+        setLoading(false);
       } else if (info.file.status === "error") {
         message.error(`${info.file.name} file tải lên thất bại!`);
+        setLoading(false);
       }
     },
     accept: ".dar.webapiset",
@@ -22,7 +24,12 @@ const FileUpload = ({ onUpload }) => {
   };
   return (
     <Space size="large">
-      <Upload {...props}>
+      <Upload
+        beforeUpload={() => {
+          setLoading(true);
+        }}
+        {...props}
+      >
         <Button icon={<UploadOutlined />}>Upload single file</Button>
       </Upload>
     </Space>

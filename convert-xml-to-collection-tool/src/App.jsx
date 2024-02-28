@@ -39,14 +39,16 @@ const initData = {
 
 function App() {
   const [textCollection, setTextCollection] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleUpload = (info) => {
+    setTextCollection("");
     let reader = new FileReader();
     reader.onload = (e) => {
       const scenarioName = info.file.name.split(".")[0];
       const items = convertXmlToCollection(e.target.result, scenarioName);
       const newData = { ...initData };
-      newData.item = items;
+      newData.item = [items];
       setTextCollection(JSON.stringify(newData));
     };
     reader.readAsText(info.file.originFileObj);
@@ -65,8 +67,9 @@ function App() {
     document.body.appendChild(element);
     element.click();
   };
-
   const handleDirectoryChange = async (event) => {
+    setLoading(true);
+    setTextCollection("");
     const files = event.target.files;
     const rootFolderName = files[0].webkitRelativePath.split("/")[0]?.trim();
     const formDataArr = new FormData();
@@ -90,6 +93,7 @@ function App() {
       },
     ];
     setTextCollection(JSON.stringify(newData));
+    setLoading(false);
   };
   const items = [
     {
@@ -97,8 +101,14 @@ function App() {
       label: "Scenario",
       children: (
         <Space direction="vertical" size="large">
-          <FileUpload onUpload={handleUpload} />
-          <Button onClick={handleDownload}>Download data</Button>
+          <FileUpload setLoading={setLoading} onUpload={handleUpload} />
+          <Button
+            loading={loading}
+            disabled={!textCollection}
+            onClick={handleDownload}
+          >
+            Download
+          </Button>
         </Space>
       ),
     },
@@ -112,7 +122,12 @@ function App() {
             webkitdirectory="true"
             onChange={handleDirectoryChange}
           />
-          <Button onClick={handleDownload} style={{ alignSelf: "flex-start" }}>
+          <Button
+            disabled={!textCollection}
+            loading={loading}
+            onClick={handleDownload}
+            style={{ alignSelf: "flex-start" }}
+          >
             Download
           </Button>
         </Space>
@@ -140,7 +155,11 @@ function App() {
             style={{ maxHeight: 460, width: 520, overflow: "auto" }}
             title="Tool convert xml to collection of postman"
           >
-            <Tabs defaultActiveKey="1" items={items} />
+            <Tabs
+              onChange={() => setTextCollection("")}
+              defaultActiveKey="1"
+              items={items}
+            />
           </Card>
         </Col>
       </Row>
