@@ -1,5 +1,5 @@
 export function convertXmlToCollection(textXml, scenarioName) {
-  const xmlFormatString = textXml.replaceAll("#", "");
+  const xmlFormatString = textXml.replaceAll("#", "//");
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(xmlFormatString, "application/xml");
   const rootName = xmlDoc.querySelector("Name").textContent?.trim();
@@ -48,8 +48,9 @@ export function convertXmlToCollection(textXml, scenarioName) {
       ?.textContent?.trim();
 
     const checkExpectValueArr = [
+      `var expectedJson = ${expectValue}`,
       'pm.test("Response JSON matches expected JSON", function () {\r',
-      `pm.expect(actualJson).to.eql(${expectValue});\r`,
+      `pm.expect(JSON.stringify(actualJson)).to.eql(JSON.stringify(expectValue));\r`,
       "});\r",
     ];
 
@@ -69,23 +70,25 @@ export function convertXmlToCollection(textXml, scenarioName) {
       const init = `pm.environment.set(\"${key}\", actualJson${configVarValue});`;
       return init;
     });
-
+    const exec = [
+      ...(hasExpectCode ? checkStatusArr : []),
+      ...(expectValue ? checkExpectValueArr : []),
+      ...([...listConfigVariable]?.length > 0 ? configSetVars : []),
+    ];
+    if (
+      !!hasExpectCode ||
+      !!expectValue ||
+      [...listConfigVariable]?.length > 0
+    ) {
+      exec.unshift("var actualJson = pm.response.json();\r");
+    }
     const item = {
       name,
       event: [
         {
           listen: "test",
           script: {
-            exec: [
-              ...((hasExpectCode ||
-                expectValue ||
-                [...listConfigVariable]?.length > 0) && [
-                "var actualJson = pm.response.json();\r",
-              ]),
-              ...(hasExpectCode ? checkStatusArr : []),
-              ...(expectValue ? checkExpectValueArr : []),
-              ...([...listConfigVariable]?.length > 0 ? configSetVars : []),
-            ],
+            exec,
             type: "text/javascript",
           },
         },

@@ -68,12 +68,13 @@ function App() {
 
   const handleDirectoryChange = async (event) => {
     const files = event.target.files;
+    const rootFolderName = files[0].webkitRelativePath.split("/")[0]?.trim();
     const formDataArr = new FormData();
     [...files].forEach((item, index) => {
       formDataArr.append(index, files[index], item.name);
     });
     const folderData = await axios.post(
-      "http://localhost:8000/folder",
+      "https://tool-convert-xml-to-collection-postman.onrender.com/folder",
       formDataArr
     );
 
@@ -82,7 +83,12 @@ function App() {
     });
 
     const newData = { ...initData };
-    newData.item = items;
+    newData.item = [
+      {
+        name: rootFolderName,
+        item: items,
+      },
+    ];
     setTextCollection(JSON.stringify(newData));
   };
   const items = [

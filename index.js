@@ -45,22 +45,6 @@ app.post("/folder", upload.any(), async (req, res) => {
   return res.status(200).json(output);
 });
 
-app.get("/read-folder", (req, res) => {
-  const folderName = req.body.folderName;
-  try {
-    if (fs.existsSync(folderName)) {
-      fs.readdir(folderName, async (err, files) => {
-        const output = await readFiles(files, folderName);
-        return res.status(200).json(output);
-      });
-    }
-  } catch (err) {
-    return res.status(500).json({
-      message: "error",
-    });
-  }
-});
-
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
