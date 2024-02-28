@@ -88,7 +88,7 @@ function App() {
   const items = [
     {
       key: "1",
-      label: "File",
+      label: "Scenario",
       children: (
         <Space direction="vertical" size="large">
           <FileUpload onUpload={handleUpload} />
@@ -98,7 +98,7 @@ function App() {
     },
     {
       key: "2",
-      label: "Read from scenario",
+      label: "Folder of scenario",
       children: (
         <Space direction="vertical" size="middle">
           <Input
