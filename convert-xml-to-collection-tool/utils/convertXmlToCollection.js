@@ -20,10 +20,13 @@ export function convertXmlToCollection(textXml, scenarioName) {
     listHeaderElms.forEach((headerElm) => {
       const key = headerElm.querySelector("Key")?.textContent?.trim();
       const value = headerElm.querySelector("Value")?.textContent?.trim();
+      const isEnabled =
+        headerElm.querySelector("Enabled")?.textContent?.trim() === "true";
       headers.push({
         key,
         value: value.replace(/\${(.*?)}/g, "{{$1}}"),
         type: "text",
+        ...(!isEnabled && { disabled: true }),
       });
     });
 
@@ -36,11 +39,22 @@ export function convertXmlToCollection(textXml, scenarioName) {
       .querySelector("Description")
       ?.textContent?.trim();
     const expectElm = element.querySelector("Expect");
-    const hasExpectCode =
-      expectElm.querySelector("ExpectHttpCode")?.textContent?.trim() === "200";
+    const expectCodeValue = expectElm
+      .querySelector("ExpectHttpCode")
+      ?.textContent?.trim();
+    const isValidExpect =
+      expectElm.querySelector("IsValidExpect")?.textContent?.trim() === "true";
+    const isExpectHttpCode =
+      expectElm.querySelector("IsValidExpectHttpCode")?.textContent?.trim() ===
+      "true";
+
     const checkStatusArr = [
-      'pm.test("Status code is 200", function () {\r',
-      "    pm.response.to.have.status(200);\r",
+      `pm.test("Status code is ${
+        isExpectHttpCode ? "not" : ""
+      } ${expectCodeValue}", function () {\r`,
+      `    pm.response.to${
+        !isExpectHttpCode ? ".not" : ""
+      }.have.status(${expectCodeValue});\r`,
       "});\r",
     ];
     const expectValue = expectElm
@@ -49,8 +63,12 @@ export function convertXmlToCollection(textXml, scenarioName) {
 
     const checkExpectValueArr = [
       `var expectedJson = ${expectValue}`,
-      'pm.test("Response JSON matches expected JSON", function () {\r',
-      `pm.expect(JSON.stringify(actualJson)).to.eql(JSON.stringify(expectValue));\r`,
+      `pm.test("Response JSON matches ${
+        isValidExpect ? "" : "not"
+      } expected JSON", function () {\r`,
+      `pm.expect(JSON.stringify(actualJson))${
+        isValidExpect ? "" : ".not"
+      }.to.eql(JSON.stringify(expectValue));\r`,
       "});\r",
     ];
 
@@ -71,12 +89,12 @@ export function convertXmlToCollection(textXml, scenarioName) {
       return init;
     });
     const exec = [
-      ...(hasExpectCode ? checkStatusArr : []),
+      ...(expectCodeValue ? checkStatusArr : []),
       ...(expectValue ? checkExpectValueArr : []),
       ...([...listConfigVariable]?.length > 0 ? configSetVars : []),
     ];
     if (
-      !!hasExpectCode ||
+      !!expectCodeValue ||
       !!expectValue ||
       [...listConfigVariable]?.length > 0
     ) {
@@ -110,8 +128,8 @@ export function convertXmlToCollection(textXml, scenarioName) {
           host: hostUrl,
           path,
         },
+        description,
       },
-      description,
     };
     items.push(item);
   });

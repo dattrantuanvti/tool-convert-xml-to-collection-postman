@@ -41,17 +41,12 @@ function App() {
   const [textCollection, setTextCollection] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleUpload = (info) => {
+  const handleUpload = (dataXmlText, scenarioName) => {
     setTextCollection("");
-    let reader = new FileReader();
-    reader.onload = (e) => {
-      const scenarioName = info.file.name.split(".")[0];
-      const items = convertXmlToCollection(e.target.result, scenarioName);
-      const newData = { ...initData };
-      newData.item = [items];
-      setTextCollection(JSON.stringify(newData));
-    };
-    reader.readAsText(info.file.originFileObj);
+    const items = convertXmlToCollection(dataXmlText, scenarioName);
+    const newData = { ...initData };
+    newData.item = [items];
+    setTextCollection(JSON.stringify(newData));
   };
 
   const handleDownload = () => {
@@ -67,33 +62,43 @@ function App() {
     document.body.appendChild(element);
     element.click();
   };
+
+  const readFileData = (reader, file) => {
+    return new Promise((resolve) => {
+      reader.onload = (e) => {
+        if (e.target.result) {
+          const scenarioName = file.name.split(".")[0];
+          resolve(convertXmlToCollection(e.target.result, scenarioName));
+        } else {
+          message.error(`file tải lên thất bại!`);
+        }
+      };
+      reader.readAsText(file);
+    });
+  };
+
   const handleDirectoryChange = async (event) => {
     setLoading(true);
     setTextCollection("");
     const files = event.target.files;
     const rootFolderName = files[0].webkitRelativePath.split("/")[0]?.trim();
-    const formDataArr = new FormData();
-    [...files].forEach((item, index) => {
-      formDataArr.append(index, files[index], item.name);
+    const items = [];
+    await [...files].forEach(async (item, index) => {
+      let reader = new FileReader();
+      const data = await readFileData(reader, files[index]);
+      items.push(data);
     });
-    const folderData = await axios.post(
-      "https://tool-convert-xml-to-collection-postman.onrender.com/folder",
-      formDataArr
-    );
-
-    const items = folderData.data.map((fileData) => {
-      return convertXmlToCollection(fileData.data, fileData.name);
-    });
-
-    const newData = { ...initData };
-    newData.item = [
-      {
-        name: rootFolderName,
-        item: items,
-      },
-    ];
-    setTextCollection(JSON.stringify(newData));
-    setLoading(false);
+    setTimeout(() => {
+      const newData = { ...initData };
+      newData.item = [
+        {
+          name: rootFolderName,
+          item: items,
+        },
+      ];
+      setTextCollection(JSON.stringify(newData));
+      setLoading(false);
+    }, 2000);
   };
   const items = [
     {
